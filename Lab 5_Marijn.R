@@ -3,6 +3,7 @@ library(tibble)
 library(ggplot2)
 library(rvest)
 library(stringr)
+library(dplyr)
 
 # User choice
 assembly_year <- "2022%2F23"
@@ -14,6 +15,7 @@ url <- "https://data.riksdagen.se/voteringlista/"
 list_parties <- ""
 county <- ""
 vote_type <- ""
+rost <- ""
 iid <- ""
 svar <- "10000"
 format <- "json"
@@ -31,11 +33,8 @@ url <- paste0(url,
               "&utformat=", format,
               "&gruppering=", gruppering
               )
-url1 <- "https://data.riksdagen.se/voteringlista/?rm=2022%2F23&bet=AU1&punkt=2&parti=C&parti=FP&valkrets=%C3%96sterg%C3%B6tlands+l%C3%A4n&rost=Fr%C3%A5nvarande&iid=0538982776628&sz=500&utformat=json&gruppering="
+
 df <- as.data.frame(fromJSON(url))
-df |>
-  group_by("voteringlista.votering.namn") |>
-  summarize(count=n())
 
 ### Scrape county, party, and year options ###
 # https://rvest.tidyverse.org/articles/rvest.html
@@ -57,5 +56,6 @@ df_party_options <- data.frame(option_name=party_options) |>
   mutate(option_short=sapply(option_short, function(x) substr(x, start=2, stop=nchar(x) - 1)))
 
 ### Scrape beteckning categories ###
-utskott_options <- read_html("https://www.riksdagen.se/sv/sa-fungerar-riksdagen/utskotten-och-eu-namnden/")
-utskott_options |> html_elements(".sc-620257bf-2 djABWg")
+# SOME USE ONLY FIRST LETTER
+utskott_options <- read_html("https://www.riksdagen.se/sv/sa-fungerar-riksdagen/utskotten-och-eu-namnden/") |> html_elements(".sc-620257bf-2.djABWg") |> html_text2()
+utskott_options_short <- c("AU", "CiU", "FiU", "FöU", "JuU", "KU", "KrU", "MJU", "NU", "SkU", "SfU", "SoU", "TU", "UbU", "UU", "EU")
