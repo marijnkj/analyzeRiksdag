@@ -1,0 +1,3 @@
+export("agenda_item", "assembly_year", "beteckning", "county", "createID", "data_bet", "data_id", "df", "format",
+       "gruppering", "iid", "list_parties", "merged", "rost", "svar", "titel", "titelregister", "url", "url1", "vote_type",
+       "x", "y", "z")
