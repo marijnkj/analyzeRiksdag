@@ -39,7 +39,6 @@ url <- paste0(url,
               )
 
 df <- as.data.frame(jsonlite::fromJSON(url))
-
 ### Scrape county, party, and year options ###
 # https://rvest.tidyverse.org/articles/rvest.html
 # https://www.utf8-chartable.de/
@@ -141,3 +140,18 @@ server <- function(input, output) {
 }
 
 shinyApp(ui=ui, server=server)
+
+### Map ###
+df_counts1 <- df_counts |>
+  mutate(perc_yes=Ja / (Avstår + Frånvarande + Ja + Nej) * 100)
+
+sweden_counties <- jsonlite::fromJSON("https://raw.githubusercontent.com/okfse/sweden-geojson/master/swedish_regions.geojson")
+plot_ly() |>
+  add_trace(type="choroplethmapbox",
+            # geojson=sweden_counties,
+            z=df_counts1$perc_yes)
+
+row_vastra_gotaland <- as.data.frame(as.list(colSums(df_counts1[c("Västra Götalands läns norra", "Västra Götalands läns östra", "Västra Götalands läns södra", "Västra Götalands läns västra"), c("Avstår" ,"Frånvarande", "Ja", "Nej")])), row.names="Västra Götaland") # https://stackoverflow.com/questions/3991905/sum-rows-in-data-frame-or-matrix
+row_vastra_gotaland$filter <- "Västra Götaland"
+
+df_counts1 <- rbind(df_counts1, row_vastra_gotaland)
