@@ -158,6 +158,7 @@ get_Riksdag <- function(){
     return(imported$titel[[1]])
   })
   
-  merged <- inner_join(x = merged, y = data.frame(voteringlista.votering.votering_id = names(titles), title = titles))
+  merged <- inner_join(x = merged, y = data.frame(voteringlista.votering.votering_id = names(titles)[!is.na(names(titles))], 
+                                                  title = titles[!is.na(names(titles))]))
   
 }
