@@ -7,7 +7,9 @@ library(stringr)
 library(dplyr)
 library(ggplot2)
 library(geojsonio)
+library(rgdal)
 library(shiny)
+library(sf)
 
 # User choice
 assembly_year <- "2022%2F23"
@@ -155,3 +157,46 @@ row_vastra_gotaland <- as.data.frame(as.list(colSums(df_counts1[c("Västra Göta
 row_vastra_gotaland$filter <- "Västra Götaland"
 
 df_counts1 <- rbind(df_counts1, row_vastra_gotaland)
+
+valkrets_shapes <- readOGR(dsn="2018_valgeografi_riksdagsvalkretsar/", layer="alla_riksdagsvalkretsar", verbose=FALSE)
+valkrets_geojson <- as.data.frame(geojson_json(valkrets_shapes))
+
+df_counts1 |>
+  plot_ly(locations=~filter, z=~perc_yes, type="choroplethmapbox", 
+          geojson=valkrets_geojson, 
+          marker=list(line=list(width=0), opacity=0.5)) |>
+  layout(mapbox=list(style="carto-positron"))
+
+###
+library(rjson)
+library(plotly)
+
+url <- 'https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json'
+counties <- rjson::fromJSON(file=url)
+
+url2<- "https://raw.githubusercontent.com/plotly/datasets/master/fips-unemp-16.csv"
+df <- read.csv(url2, colClasses=c(fips="character"))
+
+fig <- plot_ly() 
+fig <- fig %>% add_trace(
+  type="choroplethmapbox",
+  geojson=valkrets_geojson,
+  locations=rownames(df_counts1),
+  z=df_counts1$perc_yes,
+  colorscale="Viridis",
+  zmin=0,
+  zmax=12,
+  marker=list(line=list(
+    width=0),
+    opacity=0.5
+  )
+)
+
+fig <- fig %>% layout(
+  mapbox=list(
+    style="carto-positron",
+    zoom =2,
+    center=list(lon= -95.71, lat=37.09))
+)
+
+fig
