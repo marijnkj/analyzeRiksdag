@@ -27,7 +27,7 @@ library(tibble)
 > The API can be queried through a form that asks the user the fill out their choices for several variables. These are then appended to the URL, which, depending on the chosen data format, will download or load the data in browser. In this package, only the assembly year, designation and agenda point may be specified and data will be downloaded for all parties, regions, members, and types of answers. This allows the user to further filter the data as desired after fetching, while not being overwhelmed by the required input. 
 
 # Functions and examples
-> To fetch data from the Riksdag API, `fun_fetch_data()` may be used. It takes an `assembly_year`, `beteckning`, and `agenda_item` as arguments. The `assembly_year` must be in the format of YYYY%2FYY (e.g. 2022%2F23). The %2F is a replacement code for a '/' character. The character and code representations can be translated between using `fun_get_assembly_year_options()`, which returns a data.frame with the possible choices and their coded equivalents. 
+To fetch data from the Riksdag API, `fun_fetch_data()` may be used. It takes an `assembly_year`, `beteckning`, and `agenda_item` as arguments. The `assembly_year` must be in the format of YYYY%2FYY (e.g. 2022%2F23). The %2F is a replacement code for a '/' character. The character and code representations can be translated between using `fun_get_assembly_year_options()`, which returns a data.frame with the possible choices and their coded equivalents. 
 
 ```{r}
 # Fetch data for 2022/23, beteckning AU10 item 2
@@ -38,13 +38,33 @@ as_tibble(df)
 fun_get_assembly_year_options()
 ```
 
-> To get an overview of the utskott (committees) that were in place in a particular year, `get_utskott()` may be used. It takes a year in the same format as above.
+To get an overview of the utskott (committees) that were in place in a particular year, `get_utskott()` may be used. It takes a year in the same format as above. Similarly, `get_titlar()` then takes a year and an utskott and returns a named list with the titles of the options for beteckning (designation) and its code.
 
 ```{r}
 # First three utskott that exist in 2022/23
 get_utskott("2022%2F23")[1:3]
+
+# First three beteckning with their titles and codes for utskott AU
+get_titlar("2022%2F23", "AU")[1:3]
 ```
 
-> 
+In order to produce these lists of utskott and beteckning options, the package includes a file that includes data from each year and gets the unique options. This is done through the `get_Riksdag()` function. Initializing the file the first time may take about an hour, but checking and downloading updates will of course be shorter. When run, the user is prompted to say whether they want to check for updates.
+
+```{r eval=FALSE}
+# Update the utskott and beteckning back-end data
+get_Riksdag()
+```
+
+Finally, some simple plotting options are provided to do some analysis on the data. Firstly, `fun_get_counts()` allows the user to view a table of how many people voted yes, no, were absent, or chose not to vote, grouped by a specified filter. This filter may be either 'Region', 'Gender', or 'Party'. This table is also used to produce a simple bar plot of the results.
+
+```{r}
+# Table of vote counts by gender
+fun_get_counts(df, "Gender")
+
+# Bar chart of results
+fun_bar_chart(df, "Gender")
+```
+
+
 
 
