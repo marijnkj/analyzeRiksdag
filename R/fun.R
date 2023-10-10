@@ -204,35 +204,31 @@ get_Riksdag <- function(){
   
   # Creates one dataset for each grouping type
   data_id <- do.call(rbind, lapply(1:length(url), function(x) df[[x]]))
-  
   loaded_ids <- readRDS(paste0(system.file("extdata", package="analyzeRiksdag"), "/titleframe.rds"))$voteringlista.votering.votering_id
-  
-  
   missing_ids <- df$voteringlista.votering.votering_id[!(df$voteringlista.votering.votering_id %in% loaded_ids)]
+    
+  if (!is.null(missing_ids)) {
+    for(i in missing_ids){
+      url <- paste0("https://data.riksdagen.se/votering/",i)
+      imported <- as.list(xml_child(read_xml(url)))
+      data_id$dok_id[data_id$voteringlista.votering.votering_id == i] <- imported[["dok_id"]][[1]]
+      data_id$rm[data_id$voteringlista.votering.votering_id == i] <- imported[["rm"]][[1]]
+      data_id$bet[data_id$voteringlista.votering.votering_id == i] <- imported[["bet"]][[1]]
+      data_id$typrubrik[data_id$voteringlista.votering.votering_id == i] <- imported[["typrubrik"]][[1]]
+      data_id$dokumentnamn[data_id$voteringlista.votering.votering_id == i] <- imported[["dokumentnamn"]][[1]]
+      data_id$organ[data_id$voteringlista.votering.votering_id == i] <- imported[["organ"]][[1]]
+      data_id$nummer[data_id$voteringlista.votering.votering_id == i] <- imported[["nummer"]][[1]]
+      data_id$titel[data_id$voteringlista.votering.votering_id == i] <- imported[["titel"]][[1]]
+    }
   
-  for(i in missing_ids){
-    url <- paste0("https://data.riksdagen.se/votering/",i)
-    imported <- as.list(xml_child(read_xml(url)))
-    data_id$dok_id[data_id$voteringlista.votering.votering_id == i] <- imported[["dok_id"]][[1]]
-    data_id$rm[data_id$voteringlista.votering.votering_id == i] <- imported[["rm"]][[1]]
-    data_id$bet[data_id$voteringlista.votering.votering_id == i] <- imported[["bet"]][[1]]
-    data_id$typrubrik[data_id$voteringlista.votering.votering_id == i] <- imported[["typrubrik"]][[1]]
-    data_id$dokumentnamn[data_id$voteringlista.votering.votering_id == i] <- imported[["dokumentnamn"]][[1]]
-    data_id$organ[data_id$voteringlista.votering.votering_id == i] <- imported[["organ"]][[1]]
-    data_id$nummer[data_id$voteringlista.votering.votering_id == i] <- imported[["nummer"]][[1]]
-    data_id$titel[data_id$voteringlista.votering.votering_id == i] <- imported[["titel"]][[1]]
+    data_id$organ <- as.factor(data_id$organ)
+    levels(data_id$organ)[levels(data_id$organ) %in% c("BOU", "FIU", "F\u00D6U", "JUU", "KRU", "SFU", "SKU", "SOU", "UBU", "UF\u00D6U")] <- 
+      c("BoU", "FiU", "F\u00F6U", "JuU", "KrU", "SfU", "SkU", "SoU", "UbU", "UF\u00F6U")
+    
+    saveRDS(rbind(data_id, 
+                  readRDS(paste0(system.file("extdata", package="analyzeRiksdag"), "/titleframe.rds"))),
+            paste0(system.file("extdata", package="analyzeRiksdag"), "/titleframe.rds"))
   }
-  
-  data_id$organ <- as.factor(data_id$organ)
-  levels(data_id$organ)[levels(data_id$organ) %in% c("BOU", "FIU", "F\u00D6U", "JUU", "KRU", "SFU", "SKU", "SOU", "UBU", "UF\u00D6U")] <- 
-    c("BoU", "FiU", "F\u00F6U", "JuU", "KrU", "SfU", "SkU", "SoU", "UbU", "UF\u00F6U")
-  
-  
-  saveRDS(rbind(data_id, 
-                readRDS(paste0(system.file("extdata", package="analyzeRiksdag"), "/titleframe.rds"))),
-          paste0(system.file("extdata", package="analyzeRiksdag"), "/titleframe.rds"))
-  
-  
 }
 
 #' @rdname fun

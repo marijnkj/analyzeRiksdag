@@ -38,3 +38,5 @@ as_tibble(df)
 fun_get_assembly_year_options()
 ```
 
+> To get an overview of the utskott (committees) that were in place in a particular year, `get_utskott()` may be used. 
+
