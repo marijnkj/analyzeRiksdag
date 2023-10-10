@@ -1,9 +1,10 @@
 Package: analyzeRiksdag
 Type: Package
-Title: What the package does (short line)
+Title: Fetch Data on Party Votes Through Riksdag API
 Version: 1.0
 Date: 2023-10-06
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
-License: What license is it under?
+Authors@R: c(person("Max", "Björklund", email="maxbj107@student.liu.se", role="aut"),
+            person("Marijn", "Jaarsma", email="marja987@student.liu.se", role=c("aut", "cre")))
+Description: Functions are provided to connect with the Riksdag API to fetch data on party voting on various matters. A basic bar chart is provided, as well as functions that make it easy to program an interactive Shiny app showing the data. 
+License: MIT + file LICENSE
+Encoding: UTF-8
