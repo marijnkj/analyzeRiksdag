@@ -59,7 +59,7 @@ fun_get_county_options <- function() {
   # https://sparkbyexamples.com/r-programming/replace-character-in-a-string-of-r-dataframe/
   county_options <- rvest::read_html("https://data.riksdagen.se/voteringlista/") |> rvest::html_elements("#valkrets") |> rvest::html_elements("option") |> rvest::html_text2()
   county_options <- county_options[-1] # Remove "[Välj valkrets]"
-  county_options_enc <- county_options |> stringr::str_replace_all("Ö", "%C3%96") |> stringr::str_replace_all("ö", "%C3%B6") |> stringr::str_replace_all("Ä", "%C3%84") |> stringr::str_replace_all("ä", "%c3%A4") |> stringr::str_replace_all("Å", "%C3%85") |> stringr::str_replace_all("å", "%C3%A5")
+  county_options_enc <- county_options |> stringr::str_replace_all("\u00D6", "%C3%96") |> stringr::str_replace_all("\u00F6", "%C3%B6") |> stringr::str_replace_all("\u00C4", "%C3%84") |> stringr::str_replace_all("\u00E4", "%c3%A4") |> stringr::str_replace_all("\u00C5", "%C3%85") |> stringr::str_replace_all("\u00E5", "%C3%A5")
   df_county_options <- data.frame("option_name"=county_options, "option_enc"=county_options_enc)
   return(df_county_options)
 }
@@ -141,7 +141,7 @@ fun_bar_chart <- function(df, filter) {
 fun_initialize_utskott_csv <- function() {
   utskott_options <- rvest::read_html("https://www.riksdagen.se/sv/sa-fungerar-riksdagen/utskotten-och-eu-namnden/") |> rvest::html_elements(".sc-620257bf-2.djABWg") |> rvest::html_text2()
   # As of 05-10-2023
-  utskott_options_short <- c("AU", "CiU", "FiU", "FöU", "JuU", "KU", "KrU", "MJU", "NU", "SkU", "SfU", "SoU", "TU", "UbU", "UU", "EU")
+  utskott_options_short <- c("AU", "CiU", "FiU", "F\u00F6U", "JuU", "KU", "KrU", "MJU", "NU", "SkU", "SfU", "SoU", "TU", "UbU", "UU", "EU")
   df_utskott_options <- data.frame("option_name"=utskott_options, "option_short"=utskott_options_short)
   write.csv(df_utskott_options, paste0(system.file("extdata", package="analyzeRiksdag"), "/utskott.csv"))
 }
@@ -224,8 +224,8 @@ get_Riksdag <- function(){
   }
   
   data_id$organ <- as.factor(data_id$organ)
-  levels(data_id$organ)[levels(data_id$organ) %in% c("BOU", "FIU", "FÖU", "JUU", "KRU", "SFU", "SKU", "SOU", "UBU", "UFÖU")] <- 
-    c("BoU", "FiU", "FöU", "JuU", "KrU", "SfU", "SkU", "SoU", "UbU", "UFöU")
+  levels(data_id$organ)[levels(data_id$organ) %in% c("BOU", "FIU", "F\u00D6U", "JUU", "KRU", "SFU", "SKU", "SOU", "UBU", "UF\u00D6U")] <- 
+    c("BoU", "FiU", "F\u00F6U", "JuU", "KrU", "SfU", "SkU", "SoU", "UbU", "UF\u00F6U")
   
   
   saveRDS(rbind(data_id, 
@@ -277,7 +277,7 @@ get_titlar <- function(assembly_year, utskott){
 
 ### Map ###
 # df_counts1 <- df_counts |>
-#   mutate(perc_yes=Ja / (Avstår + Frånvarande + Ja + Nej) * 100)
+#   mutate(perc_yes=Ja / (Avst\u00E5r + Fr\u00E5nvarande + Ja + Nej) * 100)
 # 
 # sweden_counties <- jsonlite::fromJSON("https://raw.githubusercontent.com/okfse/sweden-geojson/master/swedish_regions.geojson")
 # plot_ly() |>
@@ -285,8 +285,8 @@ get_titlar <- function(assembly_year, utskott){
 #             # geojson=sweden_counties,
 #             z=df_counts1$perc_yes)
 # 
-# row_vastra_gotaland <- as.data.frame(as.list(colSums(df_counts1[c("Västra Götalands läns norra", "Västra Götalands läns östra", "Västra Götalands läns södra", "Västra Götalands läns västra"), c("Avstår" ,"Frånvarande", "Ja", "Nej")])), row.names="Västra Götaland") # https://stackoverflow.com/questions/3991905/sum-rows-in-data-frame-or-matrix
-# row_vastra_gotaland$filter <- "Västra Götaland"
+# row_vastra_gotaland <- as.data.frame(as.list(colSums(df_counts1[c("V\u00E4stra G\u00F6talands l\u00E4ns norra", "V\u00E4stra G\u00F6talands l\u00E4ns \u00F6stra", "V\u00E4stra G\u00F6talands l\u00E4ns s\u00F6dra", "V\u00E4stra G\u00F6talands l\u00E4ns v\u00E4stra"), c("Avst\u00E5r" ,"Fr\u00E5nvarande", "Ja", "Nej")])), row.names="Västra G\u00F6taland") # https://stackoverflow.com/questions/3991905/sum-rows-in-data-frame-or-matrix
+# row_vastra_gotaland$filter <- "V\u00E4stra G\u00F6taland"
 # 
 # df_counts1 <- rbind(df_counts1, row_vastra_gotaland)
 # 
