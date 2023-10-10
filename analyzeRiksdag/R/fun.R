@@ -151,7 +151,8 @@ ui <- fluidPage(
   )
 )
 
-
+# Takes assembly_year with %2F (can use fun_get_assembly_year_options), return list of utskott
+# Takes list of utskott
 
 server <- function(input, output) {
   output$utskott_choice <- renderUI({
