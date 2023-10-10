@@ -11,12 +11,14 @@ library(xml2)
 
 importRiksdag <- function(){
   
+  currYear <- as.numeric(strsplit(x= as.character(Sys.Date()), split = "-")[[1]][1])
+  
   # Default settings
   url <- "https://data.riksdagen.se/voteringlista/"
   # All parties
   list_parties <- ""
   # All years in url-compatible format
-  assembly_year <- paste0(2002:2022,"%2F",substr(x = 2003:2023, start = 3, stop =4))
+  assembly_year <- paste0(2002:(currYear-1),"%2F",substr(x = 2003:currYear, start = 3, stop =4))
   # All counties
   county <- ""
   # All vote types
@@ -70,7 +72,7 @@ importRiksdag <- function(){
   levels(data_id$organ)[levels(data_id$organ) %in% c("BOU", "FIU", "FÖU", "JUU", "KRU", "SFU", "SKU", "SOU", "UBU", "UFÖU")] <- 
     c("BoU", "FiU", "FöU", "JuU", "KrU", "SfU", "SkU", "SoU", "UbU", "UFöU")
 
-  saveRDS(data_id, "~/analyzeRiksdag/analyzeRiksdag/data/titleframe.rds")
+  saveRDS(titleframe, "~/analyzeRiksdag/analyzeRiksdag/inst/titleframe.rds")
  
 }
   
@@ -81,12 +83,15 @@ importRiksdag <- function(){
 
 get_Riksdag <- function(){
   
+  currYear <- as.numeric(strsplit(x= as.character(Sys.Date()), split = "-")[[1]][1])
+  
+  
   # Default settings
   url <- "https://data.riksdagen.se/voteringlista/"
   # All parties
   list_parties <- ""
   # All years in url-compatible format
-  assembly_year <- paste0(2002:2022,"%2F",substr(x = 2003:2023, start = 3, stop =4))
+  assembly_year <- paste0(2002:(currYear-1),"%2F",substr(x = 2003:currYear, start = 3, stop =4))
   # All counties
   county <- ""
   # All vote types
@@ -143,7 +148,7 @@ get_Riksdag <- function(){
   
   
   saveRDS(rbind(data_id, 
-                readRDS("~/analyzeRiksdag/analyzeRiksdag/data/titleframe.rds")),
-          "~/analyzeRiksdag/analyzeRiksdag/data/titleframe.rds")
+                readRDS("~/analyzeRiksdag/analyzeRiksdag/inst/titleframe.rds")),
+          "~/analyzeRiksdag/analyzeRiksdag/inst/titleframe.rds")
  
 }
