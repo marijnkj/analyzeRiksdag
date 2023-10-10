@@ -16,6 +16,7 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(analyzeRiksdag)
+library(tibble)
 ```
 
 # Riksdag API
@@ -26,4 +27,14 @@ library(analyzeRiksdag)
 > The API can be queried through a form that asks the user the fill out their choices for several variables. These are then appended to the URL, which, depending on the chosen data format, will download or load the data in browser. In this package, only the assembly year, designation and agenda point may be specified and data will be downloaded for all parties, regions, members, and types of answers. This allows the user to further filter the data as desired after fetching, while not being overwhelmed by the required input. 
 
 # Functions and examples
-> To fetch data from the Riksdag API, `fun_fetch_data()` may be used. 
+> To fetch data from the Riksdag API, `fun_fetch_data()` may be used. It takes an `assembly_year`, `beteckning`, and `agenda_item` as arguments. The `assembly_year` must be in the format of YYYY%2FYY (e.g. 2022%2F23). The %2F is a replacement code for a '/' character. The character and code representations can be translated between using `fun_get_assembly_year_options()`, which returns a data.frame with the possible choices and their coded equivalents. 
+
+```{r}
+# Fetch data for 2022/23, beteckning AU10 item 2
+df <- fun_fetch_data("2022%2F23", "AU10", "2")
+as_tibble(df)
+
+# Get list of options for assembly year
+fun_get_assembly_year_options()
+```
+

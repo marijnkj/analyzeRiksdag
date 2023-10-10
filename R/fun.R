@@ -1,18 +1,22 @@
 #' @name fun
-#' @rdname fun
 #' @title Functions to access and manipulate data from Riksdag API
 #' 
 #' @importFrom jsonlite fromJSON
 #' @importFrom plotly plot_ly layout add_trace
 #' @importFrom rvest read_html html_elements html_text2
 #' @importFrom stringr str_replace_all str_extract
+#' @importFrom stats as.formula
+#' @importFrom utils read.csv write.csv
+#' @importFrom dplyr mutate duplicated
+#' @importFrom xml2 xml_child read_xml
 #' 
-# #' @export fun_fetch_data
-#' @export fun_get_assembly_year_options
-#' @export fun_bar_chart
+#' @md
 
 #' @rdname fun
 #' @details `fun_fetch_data()` fetches all data from the Riksdag API using assembly_year, beteckning and agenda_item
+#' @param assembly_year The assembly year to fetch data for
+#' @param beteckning Beteckning code to fetch data for
+#' @param agenda_item Agenda item to fetch data for
 #' @examples
 #' fun_fetch_data("2022%2F23", "AU10", "2")
 #' @export
@@ -55,8 +59,8 @@ fun_get_county_options <- function() {
   # https://sparkbyexamples.com/r-programming/replace-character-in-a-string-of-r-dataframe/
   county_options <- rvest::read_html("https://data.riksdagen.se/voteringlista/") |> rvest::html_elements("#valkrets") |> rvest::html_elements("option") |> rvest::html_text2()
   county_options <- county_options[-1] # Remove "[Välj valkrets]"
-  country_options_enc <- county_options |> stringr::str_replace_all("Ö", "%C3%96") |> stringr::str_replace_all("ö", "%C3%B6") |> stringr::str_replace_all("Ä", "%C3%84") |> stringr::str_replace_all("ä", "%c3%A4") |> stringr::str_replace_all("Å", "%C3%85") |> stringr::str_replace_all("å", "%C3%A5")
-  df_county_options <- data.frame(option_name=options, option_enc=options_enc)
+  county_options_enc <- county_options |> stringr::str_replace_all("Ö", "%C3%96") |> stringr::str_replace_all("ö", "%C3%B6") |> stringr::str_replace_all("Ä", "%C3%84") |> stringr::str_replace_all("ä", "%c3%A4") |> stringr::str_replace_all("Å", "%C3%85") |> stringr::str_replace_all("å", "%C3%A5")
+  df_county_options <- data.frame("option_name"=county_options, "option_enc"=county_options_enc)
   return(df_county_options)
 }
 
@@ -68,7 +72,7 @@ fun_get_assembly_year_options <- function() {
   assembly_and_party_options <- rvest::read_html("https://data.riksdagen.se/voteringlista/") |> rvest::html_elements("fieldset") |> rvest::html_elements("label") |> rvest::html_text2()
   assembly_year_options <- assembly_and_party_options[grepl("^[0-9]{4}/[0-9]{2}$", assembly_and_party_options)]
   assembly_year_options_enc <- assembly_year_options |> stringr::str_replace_all("/", "%2F")
-  df_assembly_year_options <- data.frame(option_name=assembly_year_options, option_enc=assembly_year_options_enc)
+  df_assembly_year_options <- data.frame("option_name"=assembly_year_options, "option_enc"=assembly_year_options_enc)
   
   list_assembly_year_options <- as.list(assembly_year_options_enc)
   names(list_assembly_year_options) <- assembly_year_options
@@ -79,17 +83,21 @@ fun_get_assembly_year_options <- function() {
 #' @details `fun_get_party_options()` scrapes the options for party from the Riksdag API form
 #' @md
 fun_get_party_options <- function() {
+  assembly_and_party_options <- rvest::read_html("https://data.riksdagen.se/voteringlista/") |> rvest::html_elements("fieldset") |> rvest::html_elements("label") |> rvest::html_text2()
   party_options <- assembly_and_party_options[!grepl("^[0-9]{4}/[0-9]{2}$", assembly_and_party_options)]
-  df_party_options <- data.frame(option_name=party_options) |> 
-    mutate(option_short=stringr::str_extract(option_name, r"{\(([A-Z]+)\)}")) |>
-    mutate(option_short=sapply(option_short, function(x) substr(x, start=2, stop=nchar(x) - 1)))
+  df_party_options <- data.frame("option_name"=party_options)
+  df_party_options <- mutate(df_party_options, "option_short"=stringr::str_extract(df_party_options$option_name, r"{\(([A-Z]+)\)}"))
+  df_party_options <- mutate(df_party_options, "option_short"=sapply(df_party_options$option_short, function(x) substr(x, start=2, stop=nchar(x) - 1)))
   return(df_party_options)
 }
 
 #' @rdname fun
 #' @details `fun_get_counts()` takes the data retrieved by `fun_fetch_data()` and gets a count per type of vote based on a filter
+#' @param df A data.frame containing voting data as retrieved from the Riksdag API
+#' @param filter A filter to group the data on, can be 'Gender', 'Region', or 'Party'
 #' @examples
-#' fun_get_counts(df, "Gender")
+#' fun_get_counts(fun_fetch_data("2022%2F23", "AU10", "2"), "Gender")
+#' @export
 #' @md
 fun_get_counts <- function(df, filter) {
   if (filter == "Gender") {
@@ -111,7 +119,7 @@ fun_get_counts <- function(df, filter) {
 #' @rdname fun
 #' @details `fun_bar_chart()` produces a bar chart of vote counts from data retrieved by `fun_fetch_data()` and a Gender, Region, or Party filter
 #' @examples
-#' fun_bar_chart(df, "Gender")
+#' fun_bar_chart(fun_fetch_data("2022%2F23", "AU10", "2"), "Gender")
 #' @export
 #' @md
 fun_bar_chart <- function(df, filter) {
@@ -134,8 +142,8 @@ fun_initialize_utskott_csv <- function() {
   utskott_options <- rvest::read_html("https://www.riksdagen.se/sv/sa-fungerar-riksdagen/utskotten-och-eu-namnden/") |> rvest::html_elements(".sc-620257bf-2.djABWg") |> rvest::html_text2()
   # As of 05-10-2023
   utskott_options_short <- c("AU", "CiU", "FiU", "FöU", "JuU", "KU", "KrU", "MJU", "NU", "SkU", "SfU", "SoU", "TU", "UbU", "UU", "EU")
-  df_utskott_options <- data.frame(option_name=utskott_options, option_short=utskott_options_short)
-  write.csv(df_utskott_options, paste0(system.file("extdata", package="analyzeRiksdag"), "utskott.csv"))
+  df_utskott_options <- data.frame("option_name"=utskott_options, "option_short"=utskott_options_short)
+  write.csv(df_utskott_options, paste0(system.file("extdata", package="analyzeRiksdag"), "/utskott.csv"))
 }
 
 #' @rdname fun
@@ -197,14 +205,14 @@ get_Riksdag <- function(){
   # Creates one dataset for each grouping type
   data_id <- do.call(rbind, lapply(1:length(url), function(x) df[[x]]))
   
-  loaded_ids <- readRDS("~/analyzeRiksdag/analyzeRiksdag/data/titleframe.rds")$voteringlista.votering.votering_id
+  loaded_ids <- readRDS(paste0(system.file("extdata", package="analyzeRiksdag"), "/titleframe.rds"))$voteringlista.votering.votering_id
   
   
   missing_ids <- df$voteringlista.votering.votering_id[!(df$voteringlista.votering.votering_id %in% loaded_ids)]
   
   for(i in missing_ids){
     url <- paste0("https://data.riksdagen.se/votering/",i)
-    imported <- as_list(xml_child(read_xml(url)))
+    imported <- as.list(xml_child(read_xml(url)))
     data_id$dok_id[data_id$voteringlista.votering.votering_id == i] <- imported[["dok_id"]][[1]]
     data_id$rm[data_id$voteringlista.votering.votering_id == i] <- imported[["rm"]][[1]]
     data_id$bet[data_id$voteringlista.votering.votering_id == i] <- imported[["bet"]][[1]]
@@ -221,8 +229,9 @@ get_Riksdag <- function(){
   
   
   saveRDS(rbind(data_id, 
-                readRDS("~/analyzeRiksdag/analyzeRiksdag/inst/extdata/titleframe.rds")),
-          "~/analyzeRiksdag/analyzeRiksdag/inst/extdata/titleframe.rds")
+                readRDS(paste0(system.file("extdata", package="analyzeRiksdag"), "/titleframe.rds"))),
+          paste0(system.file("extdata", package="analyzeRiksdag"), "/titleframe.rds"))
+  
   
 }
 
@@ -233,12 +242,12 @@ get_Riksdag <- function(){
 #'
 #' @export
 #' @md
-get_utskott <- function(year){
-  #titleframe <- readRDS(paste0(system.file("extdata", package = "analyzeRiksdag"), "titleframe.rds"))
-  titleframe <- readRDS("~/analyzeRiksdag/analyzeRiksdag/inst/extdata/titleframe.rds")
-  yearindex <- which(unlist(fun_get_assembly_year_options()) == year)
+get_utskott <- function(assembly_year){
+  titleframe <- readRDS(paste0(system.file("extdata", package = "analyzeRiksdag"), "/titleframe.rds"))
+  # titleframe <- readRDS("~/analyzeRiksdag/analyzeRiksdag/inst/extdata/titleframe.rds")
+  yearindex <- which(unlist(fun_get_assembly_year_options()) == assembly_year)
   year <- names(fun_get_assembly_year_options())[[yearindex]]
-  titleframe <- titleframe[titleframe$rm == year, c("organ")]
+  titleframe <- titleframe[titleframe$rm == assembly_year, c("organ")]
   output <- as.list(unique(as.character(titleframe)))
   names(output) <- unlist(output)
   return(output)
@@ -246,17 +255,18 @@ get_utskott <- function(year){
 
 #' @rdname fun
 #' @details `get_titlar()` reads in titleframe.rds, filters on year and utskott and returns a named list of all available beteckning titles and codes
+#' @param utskott The utskott abbreviation for which to retrieve the possible beteckning titles
 #' @examples
 #' get_titlar("2022%2F23", "AU")
 #' 
 #' @export
 #' @md
-get_titlar <- function(year, utskott){
-  #titleframe <- readRDS(paste0(system.file("extdata", package = "analyzeRiksdag"), "titleframe.rds"))
-  titleframe <- readRDS("~/analyzeRiksdag/analyzeRiksdag/inst/extdata/titleframe.rds")
-  yearindex <- which(unlist(fun_get_assembly_year_options()) == year)
-  year <- names(fun_get_assembly_year_options())[[yearindex]]
-  titleframe <- titleframe[titleframe$rm == year, c("titel","nummer", "organ")]
+get_titlar <- function(assembly_year, utskott){
+  titleframe <- readRDS(paste0(system.file("extdata", package = "analyzeRiksdag"), "/titleframe.rds"))
+  # titleframe <- readRDS("~/analyzeRiksdag/analyzeRiksdag/inst/extdata/titleframe.rds")
+  yearindex <- which(unlist(fun_get_assembly_year_options()) == assembly_year)
+  assembly_year <- names(fun_get_assembly_year_options())[[yearindex]]
+  titleframe <- titleframe[titleframe$rm == assembly_year, c("titel","nummer", "organ")]
   titleframe <- titleframe[titleframe$organ == utskott, c("titel","nummer")]
   titleframe <- titleframe[order(titleframe$titel),]
   titleframe <- titleframe[!duplicated(titleframe$titel),]

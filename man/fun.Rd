@@ -33,9 +33,22 @@ fun_check_utskott_file()
 
 get_Riksdag()
 
-get_utskott(year)
+get_utskott(assembly_year)
 
-get_titlar(year, utskott)
+get_titlar(assembly_year, utskott)
+}
+\arguments{
+\item{assembly_year}{The assembly year to fetch data for}
+
+\item{beteckning}{Beteckning code to fetch data for}
+
+\item{agenda_item}{Agenda item to fetch data for}
+
+\item{df}{A data.frame containing voting data as retrieved from the Riksdag API}
+
+\item{filter}{A filter to group the data on, can be 'Gender', 'Region', or 'Party'}
+
+\item{utskott}{The utskott abbreviation for which to retrieve the possible beteckning titles}
 }
 \description{
 Functions to access and manipulate data from Riksdag API
@@ -65,8 +78,8 @@ Functions to access and manipulate data from Riksdag API
 }
 \examples{
 fun_fetch_data("2022\%2F23", "AU10", "2")
-fun_get_counts(df, "Gender")
-fun_bar_chart(df, "Gender")
+fun_get_counts(fun_fetch_data("2022\%2F23", "AU10", "2"), "Gender")
+fun_bar_chart(fun_fetch_data("2022\%2F23", "AU10", "2"), "Gender")
 get_utskott("2022\%2F23")
 
 get_titlar("2022\%2F23", "AU")
