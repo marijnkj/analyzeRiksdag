@@ -3,8 +3,8 @@ Type: Package
 Title: Fetch Data on Party Votes Through Riksdag API
 Version: 1.0
 Date: 2023-10-06
-Authors@R: c(person("Max", "Björklund", email="maxbj107@student.liu.se", role="aut"),
-            person("Marijn", "Jaarsma", email="marja987@student.liu.se", role=c("aut", "cre")))
+Authors@R: c(person("Max", "Björklund", email="maxbj107@student.liu.se", role="aut"), person("Marijn", "Jaarsma", email="marja987@student.liu.se", role=c("aut", "cre")))
 Description: Functions are provided to connect with the Riksdag API to fetch data on party voting on various matters. A basic bar chart is provided, as well as functions that make it easy to program an interactive Shiny app showing the data. 
 License: MIT + file LICENSE
+RoxygenNote: 7.2.3
 Encoding: UTF-8

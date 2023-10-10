@@ -1,19 +1,22 @@
+#' @name fun
+#' @rdname fun
+#' @title Functions to access and manipulate data from Riksdag API
 #' 
 #' @importFrom jsonlite fromJSON
 #' @importFrom plotly plot_ly layout add_trace
 #' @importFrom rvest read_html html_elements html_text2
 #' @importFrom stringr str_replace_all str_extract
-#' @importFrom rgdal
 #' 
-#' @export fun_fetch_data
+# #' @export fun_fetch_data
 #' @export fun_get_assembly_year_options
 #' @export fun_bar_chart
 
-# library(geojsonio)
-# library(rgdal)
-# library(shiny)
-# library(sf)
-
+#' @rdname fun
+#' @details `fun_fetch_data()` fetches all data from the Riksdag API using assembly_year, beteckning and agenda_item
+#' @examples
+#' fun_fetch_data("2022%2F23", "AU10", "2")
+#' @export
+#' @md
 fun_fetch_data <- function(assembly_year, beteckning, agenda_item) {
   # List of defaults
   url <- "https://data.riksdagen.se/voteringlista/"
@@ -43,11 +46,13 @@ fun_fetch_data <- function(assembly_year, beteckning, agenda_item) {
   return(df)
 }
 
-### Scrape county, party, and year options ###
-# https://rvest.tidyverse.org/articles/rvest.html
-# https://www.utf8-chartable.de/
-# https://sparkbyexamples.com/r-programming/replace-character-in-a-string-of-r-dataframe/
+#' @rdname fun
+#' @details `fun_get_county_options()` scrapes the options for valkrets from the Riksdag API form
+#' @md
 fun_get_county_options <- function() {
+  # https://rvest.tidyverse.org/articles/rvest.html
+  # https://www.utf8-chartable.de/
+  # https://sparkbyexamples.com/r-programming/replace-character-in-a-string-of-r-dataframe/
   county_options <- rvest::read_html("https://data.riksdagen.se/voteringlista/") |> rvest::html_elements("#valkrets") |> rvest::html_elements("option") |> rvest::html_text2()
   county_options <- county_options[-1] # Remove "[Välj valkrets]"
   country_options_enc <- county_options |> stringr::str_replace_all("Ö", "%C3%96") |> stringr::str_replace_all("ö", "%C3%B6") |> stringr::str_replace_all("Ä", "%C3%84") |> stringr::str_replace_all("ä", "%c3%A4") |> stringr::str_replace_all("Å", "%C3%85") |> stringr::str_replace_all("å", "%C3%A5")
@@ -55,6 +60,10 @@ fun_get_county_options <- function() {
   return(df_county_options)
 }
 
+#' @rdname fun
+#' @details `fun_get_assembly_year_options()` scrapes the options for assembly year from the Riksdag API form
+#' @export
+#' @md
 fun_get_assembly_year_options <- function() {
   assembly_and_party_options <- rvest::read_html("https://data.riksdagen.se/voteringlista/") |> rvest::html_elements("fieldset") |> rvest::html_elements("label") |> rvest::html_text2()
   assembly_year_options <- assembly_and_party_options[grepl("^[0-9]{4}/[0-9]{2}$", assembly_and_party_options)]
@@ -66,6 +75,9 @@ fun_get_assembly_year_options <- function() {
   return(list_assembly_year_options)
 }
 
+#' @rdname fun
+#' @details `fun_get_party_options()` scrapes the options for party from the Riksdag API form
+#' @md
 fun_get_party_options <- function() {
   party_options <- assembly_and_party_options[!grepl("^[0-9]{4}/[0-9]{2}$", assembly_and_party_options)]
   df_party_options <- data.frame(option_name=party_options) |> 
@@ -74,7 +86,11 @@ fun_get_party_options <- function() {
   return(df_party_options)
 }
 
-# Plotting functions
+#' @rdname fun
+#' @details `fun_get_counts()` takes the data retrieved by `fun_fetch_data()` and gets a count per type of vote based on a filter
+#' @examples
+#' fun_get_counts(df, "Gender")
+#' @md
 fun_get_counts <- function(df, filter) {
   if (filter == "Gender") {
     filter_var <- "voteringlista.votering.kon"
@@ -92,6 +108,12 @@ fun_get_counts <- function(df, filter) {
   return(df_counts)
 }
 
+#' @rdname fun
+#' @details `fun_bar_chart()` produces a bar chart of vote counts from data retrieved by `fun_fetch_data()` and a Gender, Region, or Party filter
+#' @examples
+#' fun_bar_chart(df, "Gender")
+#' @export
+#' @md
 fun_bar_chart <- function(df, filter) {
   df_counts <- fun_get_counts(df, filter)
   
@@ -105,7 +127,9 @@ fun_bar_chart <- function(df, filter) {
   return(plot)
 }
 
-### For checking back-end ###
+#' @rdname fun
+#' @details `fun_initialize_utskott_csv()` scrapes the utskott options from the Riksdag website, adds a hardcoded short alias, and writes them to a csv
+#' @md
 fun_initialize_utskott_csv <- function() {
   utskott_options <- rvest::read_html("https://www.riksdagen.se/sv/sa-fungerar-riksdagen/utskotten-och-eu-namnden/") |> rvest::html_elements(".sc-620257bf-2.djABWg") |> rvest::html_text2()
   # As of 05-10-2023
@@ -114,6 +138,9 @@ fun_initialize_utskott_csv <- function() {
   write.csv(df_utskott_options, paste0(system.file("extdata", package="analyzeRiksdag"), "utskott.csv"))
 }
 
+#' @rdname fun
+#' @details `fun_check_utskott_file()` checks the length of utskott.csv versus the utskott on the Riksdag website and throws a warning if there is a discrepancy
+#' @md
 fun_check_utskott_file <- function() {
   df_utskott_options <- read.csv(paste0(system.file("extdata", package="analyzeRiksdag"), "utskott.csv"))
   utskott_from_website <- rvest::read_html("https://www.riksdagen.se/sv/sa-fungerar-riksdagen/utskotten-och-eu-namnden/") |> rvest::html_elements(".sc-620257bf-2.djABWg") |> rvest::html_text2()
@@ -124,76 +151,9 @@ fun_check_utskott_file <- function() {
   }
 }
 
-test_fun <- function(year) {
-  if (year == "2022%2F23") {
-    return(list("A"=1, "B"=2))
-  } else {
-    return(list("C"=3, "D"=4))
-  }
-}
-
-ui <- fluidPage(
-  titlePanel("Swedish voting"),
-  
-  sidebarLayout(
-    sidebarPanel(
-      selectInput("assembly_year", h3("Choose assembly year"),
-                  choices=fun_get_assembly_year_options(), selected=fun_get_assembly_year_options()[1]),
-      textInput("beteckning", h3("Choose beteckning"), value="AU10"),
-      textInput("agenda_item", h3("Choose agenda point"), value="2"),
-      selectInput("filter", h3("Choose filter"),
-                  choices=list("Gender"="Gender", "Region"="Region", "Party"="Party"), selected="Gender"),
-      uiOutput("utskott_choice")
-    ),
-    mainPanel(
-      plotlyOutput("bar_plot")
-    )
-  )
-)
-
-# Takes assembly_year with %2F (can use fun_get_assembly_year_options), return list of utskott
-# Takes list of utskott
-
-server <- function(input, output) {
-  output$utskott_choice <- renderUI({
-    selectInput("test", h3("Test"),
-                choices=test_fun(input$assembly_year))
-  })
-  
-  output$bar_plot <- renderPlotly({
-    df <- fun_fetch_data(input$assembly_year, input$beteckning, input$agenda_item)
-    fun_bar_chart(df, input$filter)})
-}
-
-shinyApp(ui=ui, server=server)
-
-### Map ###
-# df_counts1 <- df_counts |>
-#   mutate(perc_yes=Ja / (Avstår + Frånvarande + Ja + Nej) * 100)
-# 
-# sweden_counties <- jsonlite::fromJSON("https://raw.githubusercontent.com/okfse/sweden-geojson/master/swedish_regions.geojson")
-# plot_ly() |>
-#   add_trace(type="choroplethmapbox",
-#             # geojson=sweden_counties,
-#             z=df_counts1$perc_yes)
-# 
-# row_vastra_gotaland <- as.data.frame(as.list(colSums(df_counts1[c("Västra Götalands läns norra", "Västra Götalands läns östra", "Västra Götalands läns södra", "Västra Götalands läns västra"), c("Avstår" ,"Frånvarande", "Ja", "Nej")])), row.names="Västra Götaland") # https://stackoverflow.com/questions/3991905/sum-rows-in-data-frame-or-matrix
-# row_vastra_gotaland$filter <- "Västra Götaland"
-# 
-# df_counts1 <- rbind(df_counts1, row_vastra_gotaland)
-# 
-# valkrets_shapes <- readOGR(dsn="2018_valgeografi_riksdagsvalkretsar/", layer="alla_riksdagsvalkretsar", verbose=FALSE)
-# valkrets_geojson <- as.list(geojson_json(valkrets_shapes))
-# 
-# df_counts1 |>
-#   plot_ly(locations=~filter, z=~perc_yes, type="choroplethmapbox", 
-#           geojson=valkrets_geojson, 
-#           marker=list(line=list(width=0), opacity=0.5)) |>
-#   layout(mapbox=list(style="carto-positron"))
-
-
-
-
+#' @rdname fun
+#' @details `get_Riksdag()` fetches data from the Riksdag API for every available year and creates a large data frame that can be used to retrieve all available utskott and beteckning for each year
+#' @md
 get_Riksdag <- function(){
   
   currYear <- as.numeric(strsplit(x= as.character(Sys.Date()), split = "-")[[1]][1])
@@ -266,6 +226,13 @@ get_Riksdag <- function(){
   
 }
 
+#' @rdname fun
+#' @details `get_titlar()` read in titleframe.rds, filters on year and returns a named list of all available utskott
+#' @examples
+#' get_utskott("2022%2F23")
+#'
+#' @export
+#' @md
 get_utskott <- function(year){
   #titleframe <- readRDS(paste0(system.file("extdata", package = "analyzeRiksdag"), "titleframe.rds"))
   titleframe <- readRDS("~/analyzeRiksdag/analyzeRiksdag/inst/extdata/titleframe.rds")
@@ -277,6 +244,13 @@ get_utskott <- function(year){
   return(output)
 }
 
+#' @rdname fun
+#' @details `get_titlar()` reads in titleframe.rds, filters on year and utskott and returns a named list of all available beteckning titles and codes
+#' @examples
+#' get_titlar("2022%2F23", "AU")
+#' 
+#' @export
+#' @md
 get_titlar <- function(year, utskott){
   #titleframe <- readRDS(paste0(system.file("extdata", package = "analyzeRiksdag"), "titleframe.rds"))
   titleframe <- readRDS("~/analyzeRiksdag/analyzeRiksdag/inst/extdata/titleframe.rds")
@@ -290,3 +264,27 @@ get_titlar <- function(year, utskott){
   names(output) <- titleframe$titel
   return(output)
 }
+
+### Map ###
+# df_counts1 <- df_counts |>
+#   mutate(perc_yes=Ja / (Avstår + Frånvarande + Ja + Nej) * 100)
+# 
+# sweden_counties <- jsonlite::fromJSON("https://raw.githubusercontent.com/okfse/sweden-geojson/master/swedish_regions.geojson")
+# plot_ly() |>
+#   add_trace(type="choroplethmapbox",
+#             # geojson=sweden_counties,
+#             z=df_counts1$perc_yes)
+# 
+# row_vastra_gotaland <- as.data.frame(as.list(colSums(df_counts1[c("Västra Götalands läns norra", "Västra Götalands läns östra", "Västra Götalands läns södra", "Västra Götalands läns västra"), c("Avstår" ,"Frånvarande", "Ja", "Nej")])), row.names="Västra Götaland") # https://stackoverflow.com/questions/3991905/sum-rows-in-data-frame-or-matrix
+# row_vastra_gotaland$filter <- "Västra Götaland"
+# 
+# df_counts1 <- rbind(df_counts1, row_vastra_gotaland)
+# 
+# valkrets_shapes <- readOGR(dsn="2018_valgeografi_riksdagsvalkretsar/", layer="alla_riksdagsvalkretsar", verbose=FALSE)
+# valkrets_geojson <- as.list(geojson_json(valkrets_shapes))
+# 
+# df_counts1 |>
+#   plot_ly(locations=~filter, z=~perc_yes, type="choroplethmapbox", 
+#           geojson=valkrets_geojson, 
+#           marker=list(line=list(width=0), opacity=0.5)) |>
+#   layout(mapbox=list(style="carto-positron"))
