@@ -41,6 +41,7 @@ fun_get_assembly_year_options()
 > To get an overview of the utskott (committees) that were in place in a particular year, `get_utskott()` may be used. It takes a year in the same format as above.
 
 ```{r}
+# First three utskott that exist in 2022/23
 get_utskott("2022%2F23")[1:3]
 ```
 

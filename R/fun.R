@@ -166,6 +166,7 @@ fun_check_utskott_file <- function() {
 
 #' @rdname fun
 #' @details `get_Riksdag()` fetches data from the Riksdag API for every available year and creates a large data frame that can be used to retrieve all available utskott and beteckning for each year
+#' @export
 #' @md
 get_Riksdag <- function(){
   last_update <- readRDS(paste0(system.file("extdat", package="analyzeRiksdag"), "/lastupdate.rds"))
