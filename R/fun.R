@@ -169,7 +169,7 @@ fun_check_utskott_file <- function() {
 #' @export
 #' @md
 get_Riksdag <- function(){
-  last_update <- lastupdate
+  last_update <- load("lastupdate.rda")
   input <- menu(c("Yes", "No"), title=paste("The data was last updated", last_update, ". Do you want to update data now, it could take between 10 seconds to a few minutes?"))
   
   if(input == 1) {
