@@ -8,3 +8,7 @@ Description: Functions are provided to connect with the Riksdag API to fetch dat
 License: MIT + file LICENSE
 RoxygenNote: 7.2.3
 Encoding: UTF-8
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
