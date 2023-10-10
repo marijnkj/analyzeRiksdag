@@ -169,7 +169,7 @@ fun_check_utskott_file <- function() {
 #' @export
 #' @md
 get_Riksdag <- function(){
-  last_update <- readRDS(paste0(system.file("extdat", package="analyzeRiksdag"), "/lastupdate.rds"))
+  last_update <- lastupdate
   input <- menu(c("Yes", "No"), title=paste("The data was last updated", last_update, ". Do you want to update data now, it could take between 10 seconds to a few minutes?"))
   
   if(input == 1) {
@@ -213,7 +213,7 @@ get_Riksdag <- function(){
     
     # Creates one dataset for each grouping type
     data_id <- do.call(rbind, lapply(1:length(url), function(x) df[[x]]))
-    loaded_ids <- readRDS(paste0(system.file("extdata", package="analyzeRiksdag"), "/titleframe.rds"))$voteringlista.votering.votering_id
+    loaded_ids <- titleframe$voteringlista.votering.votering_id
     missing_ids <- df$voteringlista.votering.votering_id[!(df$voteringlista.votering.votering_id %in% loaded_ids)]
       
     if (!is.null(missing_ids)) {
@@ -234,12 +234,10 @@ get_Riksdag <- function(){
       levels(data_id$organ)[levels(data_id$organ) %in% c("BOU", "FIU", "F\u00D6U", "JUU", "KRU", "SFU", "SKU", "SOU", "UBU", "UF\u00D6U")] <- 
         c("BoU", "FiU", "F\u00F6U", "JuU", "KrU", "SfU", "SkU", "SoU", "UbU", "UF\u00F6U")
       
-      saveRDS(rbind(data_id, 
-                    readRDS(paste0(system.file("extdata", package="analyzeRiksdag"), "/titleframe.rds"))),
-              paste0(system.file("extdata", package="analyzeRiksdag"), "/titleframe.rds"))
+      titleframe <- rbind(data_id, titleframe)
     }
     
-    saveRDS(Sys.Date(), paste0(system.file("extdata", package="analyzeRiksdag"), "/lastupdate.rds"))
+    lastupdate <- Sys.Date()
   }
 }
 
@@ -251,7 +249,7 @@ get_Riksdag <- function(){
 #' @export
 #' @md
 get_utskott <- function(assembly_year){
-  titleframe <- readRDS(paste0(system.file("extdata", package = "analyzeRiksdag"), "/titleframe.rds"))
+  #titleframe <- readRDS(paste0(system.file("extdata", package = "analyzeRiksdag"), "/titleframe.rds"))
   # titleframe <- readRDS("inst/extdata/titleframe.rds")
   yearindex <- which(unlist(fun_get_assembly_year_options()) == assembly_year)
   year <- names(fun_get_assembly_year_options())[[yearindex]]
@@ -270,7 +268,7 @@ get_utskott <- function(assembly_year){
 #' @export
 #' @md
 get_titlar <- function(assembly_year, utskott){
-  titleframe <- readRDS(paste0(system.file("extdata", package = "analyzeRiksdag"), "/titleframe.rds"))
+  #titleframe <- readRDS(paste0(system.file("extdata", package = "analyzeRiksdag"), "/titleframe.rds"))
   # titleframe <- readRDS("~/analyzeRiksdag/analyzeRiksdag/inst/extdata/titleframe.rds")
   yearindex <- which(unlist(fun_get_assembly_year_options()) == assembly_year)
   assembly_year <- names(fun_get_assembly_year_options())[[yearindex]]
