@@ -125,11 +125,16 @@ fun_get_counts <- function(df, filter) {
 fun_bar_chart <- function(df, filter) {
   df_counts <- fun_get_counts(df, filter)
   
-  plot <- df_counts |> plot_ly(type="bar") |> layout(xaxis=list(title=""), yaxis=list(title="Count"))
-  for (col in colnames(df_counts)) {
-    if (col != "filter") {
-      plot <- plot |> add_trace(x=~filter, y=as.formula(paste0("~", col)), name=col) # https://stackoverflow.com/questions/51628311/using-variables-to-select-axis-in-r-plotly-like-aes-string
+  if (length(df_counts) > 0) {
+    plot <- df_counts |> plot_ly(type="bar") |> layout(xaxis=list(title=""), yaxis=list(title="Count"))
+    for (col in colnames(df_counts)) {
+      if (col != "filter") {
+        plot <- plot |> add_trace(x=~filter, y=as.formula(paste0("~", col)), name=col) # https://stackoverflow.com/questions/51628311/using-variables-to-select-axis-in-r-plotly-like-aes-string
+      }
     }
+  
+  } else {
+    plot <- plotly_empty(x=0.5, y=0.5, type="scatter", mode="text", text="No data for that item, please try a different one!")
   }
   
   return(plot)
@@ -163,7 +168,10 @@ fun_check_utskott_file <- function() {
 #' @details `get_Riksdag()` fetches data from the Riksdag API for every available year and creates a large data frame that can be used to retrieve all available utskott and beteckning for each year
 #' @md
 get_Riksdag <- function(){
+  last_update <- readRDS(paste0(system.file("extdat", package="analyzeRiksdag"), "/lastupdate.rds"))
+  input <- menu(c("Yes", "No"), title=paste("The data was last updated", last_update, ". Do you want to update data now, it could take between 10 seconds to a few minutes?"))
   
+<<<<<<< Updated upstream
   currYear <- as.numeric(strsplit(x= as.character(Sys.Date()), split = "-")[[1]][1])
   
   
@@ -221,6 +229,76 @@ get_Riksdag <- function(){
     data_id$organ[data_id$voteringlista.votering.votering_id == i] <- imported[["organ"]][[1]]
     data_id$nummer[data_id$voteringlista.votering.votering_id == i] <- imported[["nummer"]][[1]]
     data_id$titel[data_id$voteringlista.votering.votering_id == i] <- imported[["titel"]][[1]]
+=======
+  if(input == 1) {
+    currYear <- as.numeric(strsplit(x= as.character(Sys.Date()), split = "-")[[1]][1])
+    
+    
+    # Default settings
+    url <- "https://data.riksdagen.se/voteringlista/"
+    # All parties
+    list_parties <- ""
+    # All years in url-compatible format
+    assembly_year <- paste0(2002:(currYear-1),"%2F",substr(x = 2003:currYear, start = 3, stop =4))
+    # All counties
+    county <- ""
+    # All vote types
+    vote_type <- ""
+    beteckning <- ""
+    iid <- ""
+    rost <- ""
+    agenda_item <- ""
+    svar <- "10000"
+    format <- "json"
+    gruppering <- "votering_id"
+    
+    url <- paste0(url, 
+                  "?rm=", c(assembly_year ,assembly_year),
+                  "&bet=", beteckning,
+                  "&punkt=", agenda_item,
+                  paste0("&parti=", list_parties, collapse=""),
+                  "&valkrets=", county,
+                  "&rost=", rost,
+                  "&iid=", iid,
+                  "&sz=", svar,
+                  "&utformat=", format,
+                  "&gruppering=", gruppering
+    )
+    
+    
+    #Downloads all datasets
+    df <- lapply(url, function(x) as.data.frame(jsonlite::fromJSON(x))[-c(1:9)])
+    
+    # Creates one dataset for each grouping type
+    data_id <- do.call(rbind, lapply(1:length(url), function(x) df[[x]]))
+    loaded_ids <- readRDS(paste0(system.file("extdata", package="analyzeRiksdag"), "/titleframe.rds"))$voteringlista.votering.votering_id
+    missing_ids <- df$voteringlista.votering.votering_id[!(df$voteringlista.votering.votering_id %in% loaded_ids)]
+      
+    if (!is.null(missing_ids)) {
+      for(i in missing_ids){
+        url <- paste0("https://data.riksdagen.se/votering/",i)
+        imported <- as.list(xml_child(read_xml(url)))
+        data_id$dok_id[data_id$voteringlista.votering.votering_id == i] <- imported[["dok_id"]][[1]]
+        data_id$rm[data_id$voteringlista.votering.votering_id == i] <- imported[["rm"]][[1]]
+        data_id$bet[data_id$voteringlista.votering.votering_id == i] <- imported[["bet"]][[1]]
+        data_id$typrubrik[data_id$voteringlista.votering.votering_id == i] <- imported[["typrubrik"]][[1]]
+        data_id$dokumentnamn[data_id$voteringlista.votering.votering_id == i] <- imported[["dokumentnamn"]][[1]]
+        data_id$organ[data_id$voteringlista.votering.votering_id == i] <- imported[["organ"]][[1]]
+        data_id$nummer[data_id$voteringlista.votering.votering_id == i] <- imported[["nummer"]][[1]]
+        data_id$titel[data_id$voteringlista.votering.votering_id == i] <- imported[["titel"]][[1]]
+      }
+    
+      data_id$organ <- as.factor(data_id$organ)
+      levels(data_id$organ)[levels(data_id$organ) %in% c("BOU", "FIU", "F\u00D6U", "JUU", "KRU", "SFU", "SKU", "SOU", "UBU", "UF\u00D6U")] <- 
+        c("BoU", "FiU", "F\u00F6U", "JuU", "KrU", "SfU", "SkU", "SoU", "UbU", "UF\u00F6U")
+      
+      saveRDS(rbind(data_id, 
+                    readRDS(paste0(system.file("extdata", package="analyzeRiksdag"), "/titleframe.rds"))),
+              paste0(system.file("extdata", package="analyzeRiksdag"), "/titleframe.rds"))
+    }
+    
+    saveRDS(Sys.Date(), paste0(system.file("extdata", package="analyzeRiksdag"), "/lastupdate.rds"))
+>>>>>>> Stashed changes
   }
   
   data_id$organ <- as.factor(data_id$organ)
@@ -244,10 +322,10 @@ get_Riksdag <- function(){
 #' @md
 get_utskott <- function(assembly_year){
   titleframe <- readRDS(paste0(system.file("extdata", package = "analyzeRiksdag"), "/titleframe.rds"))
-  # titleframe <- readRDS("~/analyzeRiksdag/analyzeRiksdag/inst/extdata/titleframe.rds")
+  # titleframe <- readRDS("inst/extdata/titleframe.rds")
   yearindex <- which(unlist(fun_get_assembly_year_options()) == assembly_year)
   year <- names(fun_get_assembly_year_options())[[yearindex]]
-  titleframe <- titleframe[titleframe$rm == assembly_year, c("organ")]
+  titleframe <- titleframe[titleframe$rm == year, c("organ")]
   output <- as.list(unique(as.character(titleframe)))
   names(output) <- unlist(output)
   return(output)
