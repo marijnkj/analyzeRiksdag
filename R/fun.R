@@ -7,7 +7,7 @@
 #' @importFrom stringr str_replace_all str_extract
 #' @importFrom stats as.formula
 #' @importFrom utils read.csv write.csv
-#' @importFrom dplyr mutate duplicated
+#' @importFrom dplyr mutate
 #' @importFrom xml2 xml_child read_xml
 #' 
 #' @md
