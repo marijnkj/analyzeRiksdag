@@ -16,3 +16,7 @@ Machine learning ideas:
 - Finding similar buzz words in topics
 - Analyze similar voting patterns -> perhaps to find similar groupings of topics
 - Find alliances between parties
+
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/marijnkj/analyzeRiksdag/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/marijnkj/analyzeRiksdag/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
