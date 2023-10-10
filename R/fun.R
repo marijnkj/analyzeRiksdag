@@ -22,6 +22,7 @@
 #' @export
 #' @md
 fun_fetch_data <- function(assembly_year, beteckning, agenda_item) {
+
   # List of defaults
   url <- "https://data.riksdagen.se/voteringlista/"
   list_parties <- ""
@@ -47,6 +48,7 @@ fun_fetch_data <- function(assembly_year, beteckning, agenda_item) {
   )
   
   df <- as.data.frame(jsonlite::fromJSON(url))
+  if(!any(df[,11:32] != "")) stop("Erronous input")
   return(df)
 }
 
@@ -171,7 +173,9 @@ fun_check_utskott_file <- function() {
 get_Riksdag <- function(){
   input <- menu(c("Yes", "No"), title=paste("The data was last updated", lastupdate, ". Do you want to update data now, it could take between 10 seconds to a few minutes?"))
   
+  # Ask for data update, else uses register saved within package at titleframe.rda
   if(input == 1) {
+    # Extracts current year av numeric
     currYear <- as.numeric(strsplit(x= as.character(Sys.Date()), split = "-")[[1]][1])
     
     
@@ -207,14 +211,17 @@ get_Riksdag <- function(){
     )
     
     
-    #Downloads all datasets
+    #Downloads dataset aggregated on votes from API, one for each year available
     df <- lapply(url, function(x) as.data.frame(jsonlite::fromJSON(x))[-c(1:9)])
     
-    # Creates one dataset for each grouping type
+    # Merging yearly datasets
     data_id <- do.call(rbind, lapply(1:length(url), function(x) df[[x]]))
+    # Saving all vote-ids already present in loaded data
     loaded_ids <- titleframe$voteringlista.votering.votering_id
+    # Extracting whether there are ids in the downloaded data that are new compared to the old one
     missing_ids <- df$voteringlista.votering.votering_id[!(df$voteringlista.votering.votering_id %in% loaded_ids)]
       
+    # Adding new observations from new IDs if they exist.
     if (!is.null(missing_ids)) {
       for(i in missing_ids){
         url <- paste0("https://data.riksdagen.se/votering/",i)
@@ -228,7 +235,8 @@ get_Riksdag <- function(){
         data_id$nummer[data_id$voteringlista.votering.votering_id == i] <- imported[["nummer"]][[1]]
         data_id$titel[data_id$voteringlista.votering.votering_id == i] <- imported[["titel"]][[1]]
       }
-    
+      
+      # Reformatting some organs/utskott
       data_id$organ <- as.factor(data_id$organ)
       levels(data_id$organ)[levels(data_id$organ) %in% c("BOU", "FIU", "F\u00D6U", "JUU", "KRU", "SFU", "SKU", "SOU", "UBU", "UF\u00D6U")] <- 
         c("BoU", "FiU", "F\u00F6U", "JuU", "KrU", "SfU", "SkU", "SoU", "UbU", "UF\u00F6U")
@@ -248,8 +256,7 @@ get_Riksdag <- function(){
 #' @export
 #' @md
 get_utskott <- function(assembly_year){
-  #titleframe <- readRDS(paste0(system.file("extdata", package = "analyzeRiksdag"), "/titleframe.rds"))
-  # titleframe <- readRDS("inst/extdata/titleframe.rds")
+  # A function updating ui choice of utskott in the shiny-app
   yearindex <- which(unlist(fun_get_assembly_year_options()) == assembly_year)
   year <- names(fun_get_assembly_year_options())[[yearindex]]
   titleframe <- titleframe[titleframe$rm == year, c("organ")]
@@ -267,8 +274,7 @@ get_utskott <- function(assembly_year){
 #' @export
 #' @md
 get_titlar <- function(assembly_year, utskott){
-  #titleframe <- readRDS(paste0(system.file("extdata", package = "analyzeRiksdag"), "/titleframe.rds"))
-  # titleframe <- readRDS("~/analyzeRiksdag/analyzeRiksdag/inst/extdata/titleframe.rds")
+  # A function updating ui choice of title/topic in the shiny app
   yearindex <- which(unlist(fun_get_assembly_year_options()) == assembly_year)
   assembly_year <- names(fun_get_assembly_year_options())[[yearindex]]
   titleframe <- titleframe[titleframe$rm == assembly_year, c("titel","nummer", "organ")]
