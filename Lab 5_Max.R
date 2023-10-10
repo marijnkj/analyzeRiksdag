@@ -21,13 +21,13 @@ importRiksdag <- function(){
   county <- ""
   # All vote types
   vote_type <- ""
+  beteckning <- ""
   iid <- ""
   rost <- ""
   agenda_item <- ""
   svar <- "10000"
   format <- "json"
-  # Download data set twice for every year, with different groupings
-  gruppering <- c("bet", "votering_id")
+  gruppering <- "votering_id"
   
   url <- paste0(url, 
                 "?rm=", c(assembly_year ,assembly_year),
@@ -42,71 +42,62 @@ importRiksdag <- function(){
                 "&gruppering=", gruppering
   )
 
-  # Order url in order of grouping type
-  # Urls ends with different letters depending on grouping type
-  # Reverses url-strings to they can be ordered by last letter
-  url <- url[order(sapply(url, function(x) intToUtf8(rev(utf8ToInt(x)))))]
+
   #Downloads all datasets
   df <- lapply(url, function(x) as.data.frame(fromJSON(x))[-c(1:9)])
   
   # Creates one dataset for each grouping type
-  data_id <- do.call(rbind, lapply(1:21, function(x) df[[x]]))
-  data_bet <- do.call(rbind, lapply(22:42, function(x) df[[x]]))
+  data_id <- do.call(rbind, lapply(1:length(url), function(x) df[[x]]))
   
-  # Because our two data sets has to be merged without containing a common idenitifer variable
-  # We create our own ID variable by making a string of each observations common variable
-  createID <- function(df){
-    df$ID <- paste0("v",df$voteringlista..villkor,
-                    "j", df$voteringlista.votering.Ja,
-                    "n", df$voteringlista.votering.Nej,
-                    "f", df$voteringlista.votering.Frånvarande,
-                    "a", df$voteringlista.votering.Avstår)
-    df
-  }
-  
-  
-  data_bet<- createID(data_bet)
-  data_id <- createID(data_id)
-  # Merges our two datasets
-  merged <- full_join(data_bet[,c(3:6,11)],data_id[,c(3,8)], by = "ID")
-  
+  # Count initialized to track progress through print()
   count <- 0
-  titles <- sapply(unique(merged$voteringlista.votering.votering_id), function(x){
-    count <<- count + 1
-    print(count/35825)
-    url <- paste0("https://data.riksdagen.se/votering/",x)
+  for(i in unique(data_id$voteringlista.votering.votering_id)){
+    count <- count + 1
+    print(count/length(unique(data_id$voteringlista.votering.votering_id)))
+    url <- paste0("https://data.riksdagen.se/votering/",i)
     imported <- as_list(xml_child(read_xml(url)))
-    return(imported$titel[[1]])
-  })
-  
-  merged <- inner_join(x = merged, y = data.frame(voteringlista.votering.votering_id = names(titles), title = titles))
-
+    data_id$dok_id[data_id$voteringlista.votering.votering_id == i] <- imported[["dok_id"]][[1]]
+    data_id$rm[data_id$voteringlista.votering.votering_id == i] <- imported[["rm"]][[1]]
+    data_id$bet[data_id$voteringlista.votering.votering_id == i] <- imported[["bet"]][[1]]
+    data_id$typrubrik[data_id$voteringlista.votering.votering_id == i] <- imported[["typrubrik"]][[1]]
+    data_id$dokumentnamn[data_id$voteringlista.votering.votering_id == i] <- imported[["dokumentnamn"]][[1]]
+    data_id$organ[data_id$voteringlista.votering.votering_id == i] <- imported[["organ"]][[1]]
+    data_id$nummer[data_id$voteringlista.votering.votering_id == i] <- imported[["nummer"]][[1]]
+    data_id$titel[data_id$voteringlista.votering.votering_id == i] <- imported[["titel"]][[1]]
   }
+  
+  data_id$organ <- as.factor(data_id$organ)
+  levels(data_id$organ)[levels(data_id$organ) %in% c("BOU", "FIU", "FÖU", "JUU", "KRU", "SFU", "SKU", "SOU", "UBU", "UFÖU")] <- 
+    c("BoU", "FiU", "FöU", "JuU", "KrU", "SfU", "SkU", "SoU", "UbU", "UFöU")
+
+  saveRDS(data_id, "~/analyzeRiksdag/analyzeRiksdag/data/titleframe.rds")
+ 
+}
+  
+
 
 
 
 
 get_Riksdag <- function(){
   
-  currYear <- as.numeric(unlist(str_split(string = Sys.Date(), pattern = "-"))[1])
-  
   # Default settings
   url <- "https://data.riksdagen.se/voteringlista/"
   # All parties
   list_parties <- ""
   # All years in url-compatible format
-  assembly_year <- paste0(currYear - 1,"%2F",substr(x = currYear, start = 3, stop =4))
+  assembly_year <- paste0(2002:2022,"%2F",substr(x = 2003:2023, start = 3, stop =4))
   # All counties
   county <- ""
   # All vote types
   vote_type <- ""
+  beteckning <- ""
   iid <- ""
   rost <- ""
   agenda_item <- ""
   svar <- "10000"
   format <- "json"
-  # Download data set twice for every year, with different groupings
-  gruppering <- c("bet", "votering_id")
+  gruppering <- "votering_id"
   
   url <- paste0(url, 
                 "?rm=", c(assembly_year ,assembly_year),
@@ -121,44 +112,38 @@ get_Riksdag <- function(){
                 "&gruppering=", gruppering
   )
   
-  # Order url in order of grouping type
-  # Urls ends with different letters depending on grouping type
-  # Reverses url-strings to they can be ordered by last letter
-  #url <- url[order(sapply(url, function(x) intToUtf8(rev(utf8ToInt(x)))))]
+  
   #Downloads all datasets
   df <- lapply(url, function(x) as.data.frame(fromJSON(x))[-c(1:9)])
   
   # Creates one dataset for each grouping type
-  data_bet <- df[[1]]
-  data_id <- df[[2]]
+  data_id <- do.call(rbind, lapply(1:length(url), function(x) df[[x]]))
   
-  # Because our two data sets has to be merged without containing a common idenitifer variable
-  # We create our own ID variable by making a string of each observations common variable
-  createID <- function(df){
-    df$ID <- paste0("v",df$voteringlista..villkor,
-                    "j", df$voteringlista.votering.Ja,
-                    "n", df$voteringlista.votering.Nej,
-                    "f", df$voteringlista.votering.Frånvarande,
-                    "a", df$voteringlista.votering.Avstår)
-    df
+  loaded_ids <- readRDS("~/analyzeRiksdag/analyzeRiksdag/data/titleframe.rds")$voteringlista.votering.votering_id
+  
+  
+  missing_ids <- df$voteringlista.votering.votering_id[!(df$voteringlista.votering.votering_id %in% loaded_ids)]
+  
+  for(i in missing_ids){
+    url <- paste0("https://data.riksdagen.se/votering/",i)
+    imported <- as_list(xml_child(read_xml(url)))
+    data_id$dok_id[data_id$voteringlista.votering.votering_id == i] <- imported[["dok_id"]][[1]]
+    data_id$rm[data_id$voteringlista.votering.votering_id == i] <- imported[["rm"]][[1]]
+    data_id$bet[data_id$voteringlista.votering.votering_id == i] <- imported[["bet"]][[1]]
+    data_id$typrubrik[data_id$voteringlista.votering.votering_id == i] <- imported[["typrubrik"]][[1]]
+    data_id$dokumentnamn[data_id$voteringlista.votering.votering_id == i] <- imported[["dokumentnamn"]][[1]]
+    data_id$organ[data_id$voteringlista.votering.votering_id == i] <- imported[["organ"]][[1]]
+    data_id$nummer[data_id$voteringlista.votering.votering_id == i] <- imported[["nummer"]][[1]]
+    data_id$titel[data_id$voteringlista.votering.votering_id == i] <- imported[["titel"]][[1]]
   }
   
+  data_id$organ <- as.factor(data_id$organ)
+  levels(data_id$organ)[levels(data_id$organ) %in% c("BOU", "FIU", "FÖU", "JUU", "KRU", "SFU", "SKU", "SOU", "UBU", "UFÖU")] <- 
+    c("BoU", "FiU", "FöU", "JuU", "KrU", "SfU", "SkU", "SoU", "UbU", "UFöU")
   
-  data_bet<- createID(data_bet)
-  data_id <- createID(data_id)
-  # Merges our two datasets
-  merged <- full_join(data_bet[,c(3:6,11)],data_id[,c(3,8)], by = "ID")
   
-  count <- 0
-  titles <- sapply(unique(merged$voteringlista.votering.votering_id), function(x){
-    count <<- count + 1
-    print(count/length(unique(merged$voteringlista.votering.votering_id)))
-    url <- paste0("https://data.riksdagen.se/votering/",x)
-    imported <- as_list(xml_child(read_xml(url)))
-    return(imported$titel[[1]])
-  })
-  
-  merged <- inner_join(x = merged, y = data.frame(voteringlista.votering.votering_id = names(titles)[!is.na(names(titles))], 
-                                                  title = titles[!is.na(names(titles))]))
-  
+  saveRDS(rbind(data_id, 
+                readRDS("~/analyzeRiksdag/analyzeRiksdag/data/titleframe.rds")),
+          "~/analyzeRiksdag/analyzeRiksdag/data/titleframe.rds")
+ 
 }
