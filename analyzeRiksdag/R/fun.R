@@ -282,7 +282,8 @@ get_titlar <- function(year, utskott){
   titleframe <- readRDS("~/analyzeRiksdag/analyzeRiksdag/inst/extdata/titleframe.rds")
   yearindex <- which(unlist(fun_get_assembly_year_options()) == year)
   year <- names(fun_get_assembly_year_options())[[yearindex]]
-  titleframe <- titleframe[titleframe$rm == year, c("titel","nummer")]
+  titleframe <- titleframe[titleframe$rm == year, c("titel","nummer", "organ")]
+  titleframe <- titleframe[titleframe$organ == utskott, c("titel","nummer")]
   titleframe <- titleframe[order(titleframe$titel),]
   titleframe <- titleframe[!duplicated(titleframe$titel),]
   output <- as.list(sapply(1:nrow(titleframe), function(x) paste0(utskott,titleframe$nummer[x])))
